@@ -1,32 +1,75 @@
-// зроби імпорт модулів fs (у версії, яка працює з промісами - fs/promises) і path для роботи з файловою системою.
-// ініціалізація модуля з промісами
-// const fs = require("fs").promises;
-
 import * as fs from "node:fs/promises";
 import path from "node:path";
+import crypto from "node:crypto";
 
 const contactsPath = path.resolve("db", "contacts.json");
 
-// const contactsPath = path.join(__dirname, "contacts.json");
+// ------------------ Private for---------------------------------//
 
-console.log("path:", contactsPath);
+// readContacts
+async function readContacts() {
+  const data = await fs.readFile(contactsPath, { encoding: "utf-8" });
+  return JSON.parse(data);
+}
 
-// export async function readContacts() {
-//   try {
-//     const data = await fs.readFile(contactsPath, "utf-8");
-//     return JSON.parse(data);
-//   } catch (error) {
-//     console.error("Error reading contacts:", error);
-//     throw error;
-//   }
-// }
+// writeContacts
+function writeContacts(contacts) {
+  return fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
+}
 
-// export async function writeContacts(contacts) {
-//   try {
-//     const json = JSON.stringify(contacts);
-//     await fs.writeFile(contactsPath, json);
-//   } catch (error) {
-//     console.error("Error writing contacts:", error);
-//     throw error;
-//   }
-// }
+// ------------------ Export for--------------------------------- //
+
+// listContacts
+async function listContacts() {
+  return await readContacts();
+}
+
+// getContactById
+async function getContactById(contactId) {
+  const contacts = await readContacts();
+  return contacts.find((contact) => contact.id === contactId) || null;
+}
+
+// removeContact
+async function removeContact(contactId) {
+  let contacts = await readContacts();
+  const removedContactIndex = contacts.findIndex(
+    (contact) => contact.id === contactId
+  );
+  if (removedContactIndex !== -1) {
+    const removedContact = contacts.splice(removedContactIndex, 1)[0];
+    await writeContacts(contacts);
+    return removedContact;
+  }
+  return null;
+}
+
+// addContact
+async function addContact(name, email, phone) {
+  const contacts = await readContacts();
+  const newContact = { name, email, phone, id: crypto.randomUUID() };
+  contacts.push(newContact);
+  await writeContacts(contacts);
+  return newContact;
+}
+
+// updateContact
+async function updateContact(id, updatedContact) {
+  const contacts = await readContacts();
+  const index = contacts.findIndex((contact) => contact.id === id);
+  if (index !== -1) {
+    contacts[index] = { ...updatedContact, id };
+    await writeContacts(contacts);
+    return contacts[index];
+  }
+
+  return null;
+}
+
+export default {
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+  updateContact,
+};
