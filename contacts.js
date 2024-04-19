@@ -66,7 +66,6 @@ async function updateContact(id, { name, email, phone }) {
       id,
     };
     contacts[index] = updatedContact;
-    // contacts[index] = { ...contact, id };
     await writeContacts(contacts);
     return contacts[index];
   }
